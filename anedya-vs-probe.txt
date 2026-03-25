@@ -1,0 +1,3 @@
+/v1/valuestore/get -> 404: 404 page not found
+/v1/valuestore/getValue -> 401: {"success":false,"error":"access denied","errcode":4001,"reasonCode":"auth::accessdenied"}
+/v1/valuestore/getLatest -> 404: 404 page not found

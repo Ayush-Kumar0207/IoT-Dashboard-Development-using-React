@@ -1,0 +1,12 @@
+/v1/data/latest
+STATUS: 401
+BODY: {"success":false,"error":"access denied","errcode":4001,"reasonCode":"auth::accessdenied"}
+
+/v1/health/status
+STATUS: 401
+BODY: {"success":false,"error":"access denied","errcode":4001,"reasonCode":"auth::accessdenied"}
+
+/v1/data/getlatest
+STATUS: 404
+BODY: 404 page not found
+
