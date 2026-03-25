@@ -13,13 +13,15 @@ dist-ssr
 *.local
 .env.local
 # Probes and diagnostic files
-probe-*.cjs
-deep-probe.cjs
-test-profiles.cjs
-probe-results*.txt
-probe-time.txt
-probe-expiry.txt
+*probe*
+test-*.js
 test-*.cjs
+anedya-*.txt
+project-info.json
+final-project-info.txt
+*.cjs
+*.local
+.env.local
 
 # Editor directories and files
 .vscode/*
