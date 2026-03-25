@@ -1,5 +1,0 @@
-No Bearer -> 401: {"success":false,"error":"missing authorization information","errcode":4001,"reasonCode":"auth::toke
-X-Anedya-Key -> 401: {"success":false,"error":"missing authorization information","errcode":4001,"reasonCode":"auth::toke
-Auth-mode apiKey -> 401: {"success":false,"error":"missing authorization information","errcode":4001,"reasonCode":"auth::toke
-Auth-mode apiKey + Bearer -> 401: {"success":false,"error":"access denied","errcode":4001,"reasonCode":"auth::accessdenied"}
-Project ID Header -> 401: {"success":false,"error":"access denied","errcode":4001,"reasonCode":"auth::accessdenied"}

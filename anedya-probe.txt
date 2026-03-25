@@ -1,6 +1,0 @@
-api.ap-in-1.anedya.io/v1/data/getsnapshot -> 404: 404 page not found
-api.ap-in-1.anedya.io/v1/data/snapshot -> 401: {"success":false,"error":"access denied","errcode":4001,"reasonCode":"auth::accessdenied"}
-api.ap-in-1.anedya.io/v1/data/getLatestSnapshot -> 404: 404 page not found
-api.anedya.io/v1/data/getsnapshot -> 404: 404 page not found
-api.anedya.io/v1/data/snapshot -> 401: {"success":false,"error":"access denied","errcode":4001,"reasonCode":"auth::accessdenied"}
-api.anedya.io/v1/data/getLatestSnapshot -> 404: 404 page not found
