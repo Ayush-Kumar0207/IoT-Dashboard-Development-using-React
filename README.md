@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.icons8.com/fluency/96/iot-sensor.png" alt="IoT Dashboard Logo" width="80"/>
+  <img src="https://img.icons8.com/fluency/96/internet-of-things.png" alt="IoT Dashboard Logo" width="80"/>
 </p>
 
 <h1 align="center">⚡ IoT Dashboard</h1>
