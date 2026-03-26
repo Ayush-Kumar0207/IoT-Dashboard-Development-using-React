@@ -15,12 +15,19 @@ export async function fetchAllUsers(): Promise<UserProfile[]> {
 }
 
 export async function updateUserRole(userId: string, newRole: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .update({ role: newRole }) 
     .eq('id', userId)
+    .select()
 
   if (error) {
     throw new Error(error.message)
+  }
+
+  // Supabase silently returns successful (no error) but with 0 rows updated
+  // if Row Level Security (RLS) blocks the update.
+  if (!data || data.length === 0) {
+    throw new Error('Database Update Blocked: Row Level Security (RLS) policies prevented this change. Ensure Admin update policies are correctly configured in Supabase.')
   }
 }
