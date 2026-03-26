@@ -79,7 +79,7 @@ export default function Admin() {
                 </TableCell>
                 <TableCell className="text-right">
                   <Select
-                    defaultValue={user.role}
+                    value={user.role}
                     onValueChange={(value: UserRole) => 
                       updateRole({ userId: user.id, newRole: value })
                     }

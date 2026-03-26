@@ -59,11 +59,37 @@ export const useAuthStore = create<AuthState>((set) => ({
     // Register the auth state listener only once
     if (!listenerRegistered) {
       listenerRegistered = true
+      
+      // 1. Listen for Auth changes (login/logout)
       supabase.auth.onAuthStateChange(async (_event, session) => {
         const user = session?.user ?? null
         const profile = user ? await fetchProfile(user.id) : null
         set({ user, profile, isLoading: false })
       })
+
+      // 2. Listen for Realtime Profile updates
+      // This ensures that when an Admin changes a user's role, 
+      // the user sees the change INSTANTLY without a refresh.
+      supabase
+        .channel('public:profiles')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+          },
+          (payload) => {
+            const updatedProfile = payload.new as UserProfile
+            const currentUser = useAuthStore.getState().user
+            
+            // Only update if it's the current user's profile
+            if (currentUser && updatedProfile.id === currentUser.id) {
+              set({ profile: updatedProfile })
+            }
+          }
+        )
+        .subscribe()
     }
   },
 
