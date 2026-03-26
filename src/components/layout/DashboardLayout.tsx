@@ -1,5 +1,8 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { fetchAllUsers } from '@/services/admin'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useEffect } from 'react'
 import { LogOut, Users, LayoutDashboard, Shield, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -25,6 +28,16 @@ import {
 export default function DashboardLayout() {
   const { profile, signOut } = useAuthStore()
   const location = useLocation()
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (profile?.role === 'ADMIN') {
+      queryClient.prefetchQuery({
+        queryKey: ['adminUsers'],
+        queryFn: fetchAllUsers,
+      })
+    }
+  }, [profile, queryClient])
 
   const navigation = [
     { name: 'Overview', href: '/', icon: LayoutDashboard },
@@ -49,6 +62,14 @@ export default function DashboardLayout() {
             <NavLink
               key={item.name}
               to={item.href}
+              onMouseEnter={() => {
+                if (item.href === '/admin') {
+                  queryClient.prefetchQuery({
+                    queryKey: ['adminUsers'],
+                    queryFn: fetchAllUsers,
+                  })
+                }
+              }}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isActive 

@@ -7,6 +7,7 @@ export function useUsers() {
   return useQuery({
     queryKey: ['adminUsers'],
     queryFn: fetchAllUsers,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
 
