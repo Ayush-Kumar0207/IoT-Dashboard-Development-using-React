@@ -35,8 +35,12 @@ CREATE POLICY "profiles_select" ON public.profiles
 CREATE POLICY "profiles_insert" ON public.profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
+DROP POLICY IF EXISTS "profiles_update" ON public.profiles;
 CREATE POLICY "profiles_update" ON public.profiles
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (
+    auth.uid() = id OR 
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'ADMIN'
+  );
 
 -- 5. Trigger function (SECURITY DEFINER = bypasses RLS)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
