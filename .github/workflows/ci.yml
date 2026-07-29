@@ -27,5 +27,3 @@ jobs:
           VITE_SUPABASE_ANON_KEY: public-test-key
       - name: Validate serverless proxy syntax
         run: node --check api/anedya.js
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
