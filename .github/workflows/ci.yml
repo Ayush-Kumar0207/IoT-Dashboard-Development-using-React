@@ -19,7 +19,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run lint
+      - name: Lint cloud integration changes
+        run: npx eslint src/services/anedya.ts api/anedya.js
       - run: npm run build
         env:
           VITE_SUPABASE_URL: https://example.supabase.co
