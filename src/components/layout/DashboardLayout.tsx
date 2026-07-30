@@ -46,7 +46,7 @@ export default function DashboardLayout() {
       : []),
   ]
 
-  const SidebarContent = () => (
+  const renderSidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
       <div className="p-6">
         <div className="flex items-center gap-2 px-2">
@@ -138,14 +138,14 @@ export default function DashboardLayout() {
             <SheetHeader className="sr-only">
               <SheetTitle>Navigation Menu</SheetTitle>
             </SheetHeader>
-            <SidebarContent />
+            {renderSidebarContent()}
           </SheetContent>
         </Sheet>
       </header>
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 border-r sticky top-0 h-screen">
-        <SidebarContent />
+        {renderSidebarContent()}
       </aside>
 
       {/* Main Content */}

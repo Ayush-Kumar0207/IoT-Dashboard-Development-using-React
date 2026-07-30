@@ -11,7 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
-.env.local
+.env
+.env.*
+!.env.example
+
 # Probes and diagnostic files
 *probe*
 test-*.js
@@ -20,8 +23,6 @@ anedya-*.txt
 project-info.json
 final-project-info.txt
 *.cjs
-*.local
-.env.local
 
 # Editor directories and files
 .vscode/*

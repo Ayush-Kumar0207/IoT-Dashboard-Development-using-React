@@ -1,13 +1,21 @@
 const BASE_URL = 'https://api.ap-in-1.anedya.io/v1';
+const REQUIRED_ENV = ['ANEDYA_API_KEY', 'ANEDYA_NODE_ID'];
+const MAX_HISTORY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 function json(res, status, body) {
   res.status(status).setHeader('Cache-Control', 'no-store').json(body);
 }
 
 function requiredEnv(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  const value = process.env[name]?.trim();
+  if (!value) throw cloudError(`Missing required environment variable: ${name}`, 503);
   return value;
+}
+
+function cloudError(message, status = 502) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
 }
 
 async function post(path, payload) {
@@ -22,17 +30,20 @@ async function post(path, payload) {
   });
 
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(data.error || `Anedya request failed with ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
+  if (!response.ok) throw cloudError(data.error || `Anedya request failed with ${response.status}`, response.status);
   return data;
 }
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    return json(res, 200, { status: 'ok', service: 'anedya-proxy', timestamp: new Date().toISOString() });
+    const missing = REQUIRED_ENV.filter((name) => !process.env[name]?.trim());
+    const configured = missing.length === 0;
+    return json(res, configured ? 200 : 503, {
+      status: configured ? 'ok' : 'misconfigured',
+      service: 'anedya-proxy',
+      missing,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   if (req.method !== 'POST') {
@@ -68,11 +79,17 @@ export default async function handler(req, res) {
 
     if (action === 'history') {
       if (!['temperature', 'humidity'].includes(variable)) return json(res, 400, { error: 'Unsupported variable' });
+      if (!Number.isFinite(from) || !Number.isFinite(to) || from >= to) {
+        return json(res, 400, { error: 'from and to must be valid millisecond timestamps with from before to' });
+      }
+      if (to - from > MAX_HISTORY_WINDOW_MS) {
+        return json(res, 400, { error: 'History requests are limited to 7 days' });
+      }
       const result = await post('/data/getData', {
         nodes: [nodeId],
         variable,
-        from: Math.floor(Number(from) / 1000),
-        to: Math.floor(Number(to) / 1000),
+        from: Math.floor(from / 1000),
+        to: Math.floor(to / 1000),
         order: 'desc',
         limit: 200,
       });
@@ -92,6 +109,9 @@ export default async function handler(req, res) {
         type: 'string',
         expiry: Date.now() + 30000,
       });
+      if (result.success !== true) {
+        throw cloudError(result.error || 'Anedya rejected the relay command');
+      }
       return json(res, 200, result);
     }
 
