@@ -88,9 +88,9 @@ cp .env.example .env.local
 # 4. Run the Supabase SQL setup
 # → Execute supabase_setup.sql in your Supabase SQL Editor
 
-# 5. Start the development server
-npm run dev
-# → Open http://localhost:5173
+# 5. Start Vite and the serverless proxy together
+npx vercel dev
+# → Open the local URL printed by Vercel (usually http://localhost:3000)
 ```
 
 ---
@@ -180,42 +180,27 @@ Whether you're building a smart home prototype, an industrial monitoring console
 ## 🏛 Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         BROWSER                                 │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  React App (Vite + TypeScript)                            │  │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────────────────┐    │  │
-│  │  │ Zustand   │  │ TanStack │  │ React Router         │    │  │
-│  │  │ AuthStore │  │ Query    │  │ ProtectedRoute       │    │  │
-│  │  │           │  │ Hooks    │  │ RoleRoute             │    │  │
-│  │  └─────┬─────┘  └─────┬────┘  └──────────────────────┘    │  │
-│  │        │              │                                    │  │
-│  └────────┼──────────────┼────────────────────────────────────┘  │
-│           │              │                                       │
-└───────────┼──────────────┼───────────────────────────────────────┘
-            │              │
-            ▼              ▼
-  ┌──────────────┐   ┌─────────────────┐
-  │  Supabase    │   │  Anedya Cloud   │
-  │  ──────────  │   │  ─────────────  │
-  │  • Auth      │   │  • /data/latest │
-  │  • Profiles  │   │  • /data/getData│
-  │  • RLS       │   │  • /commands    │
-  │  • Realtime  │   │  • /health      │
-  └──────────────┘   └────────┬────────┘
-                              │
-                     ┌────────▼────────┐
-                     │  IoT Hardware   │
-                     │  (or Simulator  │
-                     │   on Render)    │
-                     └─────────────────┘
+Browser (React + Vite)
+  |-- Supabase public client --> Supabase Auth / Profiles / Realtime
+  `-- same-origin /api/anedya
+                |
+                v
+      Vercel serverless proxy
+      (holds the Anedya secret)
+                |
+                v
+          Anedya Cloud API
+                ^
+                |
+      IoT hardware / simulator
 ```
 
 **Data Flow:**
-1. The **Simulator** (hosted on Render) pushes temperature & humidity data to the **Anedya Cloud** via its REST API.
-2. The **React dashboard** polls the Anedya Cloud API at configurable intervals (5s telemetry, 10s status, 15s charts).
-3. **Supabase** handles user authentication and stores profile/role data with RLS enforcement.
-4. **Supabase Realtime** channels ensure role changes propagate instantly to all connected browser sessions.
+1. The **Simulator** pushes temperature and humidity data to **Anedya Cloud**.
+2. The browser sends telemetry, history, health, and command requests to the same-origin `/api/anedya` endpoint.
+3. The **Vercel serverless proxy** authenticates with Anedya, validates input, and normalizes responses; the Anedya token never enters the browser bundle.
+4. **Supabase** handles authentication and stores profile/role data with RLS enforcement.
+5. **Supabase Realtime** channels propagate role changes to active sessions.
 
 ---
 
@@ -271,24 +256,26 @@ IoT-Dashboard-Development-using-React/
 
 ## ⚙️ Environment Variables
 
-Create a `.env.local` file in the project root:
+Copy `.env.example` to `.env.local` and fill in all four values:
 
 ```env
-# ── Supabase ──────────────────────────────────────────
+# Public browser configuration
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
-# ── Anedya IoT Cloud ──────────────────────────────────
-VITE_ANEDYA_API_KEY=your-anedya-project-access-token
-VITE_ANEDYA_NODE_ID=your-device-node-id
+# Server-only configuration for /api/anedya
+ANEDYA_API_KEY=your-anedya-project-access-token
+ANEDYA_NODE_ID=your-device-node-id
 ```
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL (found in Project Settings → API) |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous/public key for client-side access |
-| `VITE_ANEDYA_API_KEY` | Anedya project access token (Bearer auth for API calls) |
-| `VITE_ANEDYA_NODE_ID` | UUID of the IoT device node registered in your Anedya project |
+| `VITE_SUPABASE_URL` | Public Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Public Supabase anonymous key |
+| `ANEDYA_API_KEY` | Server-only Anedya project access token |
+| `ANEDYA_NODE_ID` | Server-only UUID of the Anedya device node |
+
+Only `VITE_` variables are embedded in the browser bundle. Never rename either Anedya variable with a `VITE_` prefix.
 
 ---
 
@@ -322,19 +309,17 @@ Navigate to `/admin` (visible only to Admin users):
 
 ### Vercel (Frontend)
 
-The dashboard is deployed on Vercel with SPA rewrites configured in `vercel.json`:
-
-```json
-{
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-}
-```
+The Vercel deployment serves both the Vite SPA and the `/api/anedya` serverless proxy.
 
 **Steps:**
-1. Push your repository to GitHub
-2. Import the project in [Vercel](https://vercel.com)
-3. Add environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ANEDYA_API_KEY`, `VITE_ANEDYA_NODE_ID`)
-4. Vercel auto-detects Vite and deploys
+1. Push the repository to GitHub.
+2. Import the project in [Vercel](https://vercel.com).
+3. Add the public variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+4. Add the server-only variables `ANEDYA_API_KEY` and `ANEDYA_NODE_ID`.
+5. Deploy the project.
+6. Verify `GET /api/anedya`: it returns `200` with `status: ok` when configured, or `503` with the exact missing variable names.
+
+Set the variables separately for Preview and Production as needed, and redeploy after rotating a credential.
 
 ### Render (Simulator)
 
@@ -353,8 +338,8 @@ The `simulator.js` background service runs on Render as a **Background Worker** 
 
 - **Row Level Security (RLS)** — All database access is governed by PostgreSQL RLS policies. Users can only read their own profile; only Admins can update other users' roles.
 - **SECURITY DEFINER Functions** — The `handle_new_user()` trigger function runs with elevated privileges to auto-create profiles on signup.
-- **Environment Variables** — All secrets are stored in `.env.local` and never committed to version control.
-- **Bearer Token Auth** — Anedya API calls use project access tokens transmitted via `Authorization` headers.
+- **Environment Variables** — `.env*` files are ignored except the placeholder-only `.env.example`; production secrets live in Vercel's encrypted environment settings.
+- **Server-Side Bearer Auth** — The serverless proxy attaches the Anedya token. The browser receives only normalized data and errors.
 - **Command Expiry** — Relay commands expire after 30 seconds, preventing stale commands from executing on devices.
 
 ---
@@ -366,7 +351,7 @@ The `simulator.js` background service runs on Render as a **Background Worker** 
 - [ ] 📈 Customizable time range selectors for historical charts
 - [ ] 🔔 Alert thresholds with email/push notifications
 - [ ] 📱 PWA support for mobile installation
-- [ ] 🧪 Unit & integration tests (Vitest + Testing Library)
+- [ ] 🧪 Component integration tests (the serverless proxy already has Node contract tests)
 - [ ] 📋 Audit log for admin actions
 - [ ] 🌐 Multi-language (i18n) support
 

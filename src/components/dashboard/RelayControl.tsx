@@ -15,7 +15,9 @@ export default function RelayControl() {
 
   const handleToggle = (checked: boolean) => {
     setIsOn(checked)
-    controlRelay(checked)
+    controlRelay(checked, {
+      onError: () => setIsOn(!checked),
+    })
   }
 
   return (
